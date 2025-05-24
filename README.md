@@ -13,7 +13,7 @@ A sophisticated multi-agent system designed to analyze and fact-check media cove
 
 ### 📰 Media Analysis Capabilities
 - **Western Media Sources**: CNN, BBC, Reuters, AP News, Guardian, Washington Post, New York Times
-- **Arabic Media Sources**: Al Jazeera Arabic, BBC Arabic, RT Arabic, Sky News Arabic, Al Arabiya
+- **Arabic Media Sources**: Al Jazeera Arabic, Sky News Arabic, Al Arabiya
 - **Smart Article Matching**: AI-powered matching of related articles across language barriers
 - **Deep Content Analysis**: Full article content extraction and analysis
 - **Contradiction Detection**: Advanced AI analysis to identify factual contradictions
