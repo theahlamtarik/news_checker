@@ -1,0 +1,721 @@
+return contradictions.map(contradiction => `
+                <div class="contradiction-item">
+                    <div class="fact-check-topic">🚨 Contradiction in Match ${contradiction.match_id}</div>
+                    
+                    <!-- Article Pair Info -->
+                    <div class="terms-comparison">
+                        <div class="terms-list western-terms">
+                            <h4>🇺🇸 ${contradiction.western_article.source}:</h4>
+                            <strong>${contradiction.western_article.title}</strong>
+                            <p>${contradiction.western_article.summary}</p>
+                            <a href="${contradiction.western_article.url}" target="_blank" class="article-link">Read Full Article</a>
+                        </div>
+                        <div class="terms-list arabic-terms">
+                            <h4>🇵🇸 ${contradiction.arabic_article.source}:</h4>
+                            <strong>${contradiction.arabic_article.title}</strong>
+                            <p>${contradiction.arabic_article.summary}</p>
+                            <a href="${contradiction.arabic_article.url}" target="_blank" class="article-link">Read Full Article</a>
+                        </div>
+                    </div>
+
+                    <!-- Contradictions Found -->
+                    ${contradiction.contradictions_found.map(cont => `
+                        <div style="background: #fff3cd; border: 1px solid #ffeaa7; border-radius: 8px; padding: 15px; margin: 10px 0;">
+                            <strong>🚨 ${cont.type.replace('_', ' ').toUpperCase()} CONTRADICTION (${cont.severity} severity):</strong>
+                            <div style="margin-top: 8px;">
+                                <div>🇺🇸 <strong>Western claim:</strong> ${cont.western_claim}</div>
+                                <div>🇵🇸 <strong>Arabic claim:</strong> ${cont.arabic_claim}</div>
+                            </div>
+                        </div>
+                    `).join('')}
+
+                    <!-- Differences Found -->
+                    ${contradiction.differences.map(diff => `
+                        <div style="background: #e8f4f8; border: 1px solid #74b9ff; border-radius: 8px; padding: 15px; margin: 10px 0;">
+                            <strong>📝 ${diff.type.replace('_', ' ').toUpperCase()} DIFFERENCE:</strong>
+                            <div style="margin-top: 8px;">
+                                ${diff.western_terms ? `<div>🇺🇸 <strong>Western terms:</strong> ${diff.western_terms.join(', ')}</div>` : ''}
+                                ${diff.arabic_terms ? `<div>🇵🇸 <strong>Arabic terms:</strong> ${diff.arabic_terms.join(', ')}</div>` : ''}
+                                ${diff.western_focus ? `<div>🇺🇸 <strong>Western focus:</strong> ${diff.western_focus.join(', ')}</div>` : ''}
+                                ${diff.arabic_focus ? `<div>🇵🇸 <strong>Arabic focus:</strong> ${diff.arabic_focus.join(', ')}</div>` : ''}
+                                ${diff.western_framing ? `<div>🇺🇸 <strong>Western framing:</strong> ${diff.western_framing.join(', ')}</div>` : ''}
+                                ${diff.arabic_framing ? `<div>🇵🇸 <strong>Arabic framing:</strong> ${diff.arabic_framing.join(', ')}</div>` : ''}
+                                <div style="margin-top: 5px; font-style: italic;">💡 ${diff.analysis}</div>
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+            `).join('');
+        }<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gaza Media Fact-Check Dashboard</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #2d3748 0%, #4a5568 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            font-weight: 700;
+        }
+
+        .header p {
+            font-size: 1.2em;
+            opacity: 0.9;
+        }
+
+        .control-panel {
+            background: #f8fafc;
+            padding: 25px;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .input-group {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .input-group label {
+            font-weight: 600;
+            color: #4a5568;
+        }
+
+        .input-group input {
+            padding: 12px 20px;
+            border: 2px solid #e2e8f0;
+            border-radius: 10px;
+            font-size: 16px;
+            min-width: 200px;
+            transition: border-color 0.3s;
+        }
+
+        .input-group input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 40px;
+            color: #667eea;
+            font-size: 18px;
+        }
+
+        .spinner {
+            display: inline-block;
+            width: 40px;
+            height: 40px;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-right: 10px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .results {
+            padding: 30px;
+        }
+
+        .summary-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .summary-card {
+            background: linear-gradient(135deg, #ff6b6b 0%, #ee5a52 100%);
+            color: white;
+            padding: 25px;
+            border-radius: 15px;
+            text-align: center;
+            box-shadow: 0 5px 15px rgba(255, 107, 107, 0.3);
+        }
+
+        .summary-card.sources {
+            background: linear-gradient(135deg, #4ecdc4 0%, #44a08d 100%);
+            box-shadow: 0 5px 15px rgba(78, 205, 196, 0.3);
+        }
+
+        .summary-card.contradictions {
+            background: linear-gradient(135deg, #ffa726 0%, #ff7043 100%);
+            box-shadow: 0 5px 15px rgba(255, 167, 38, 0.3);
+        }
+
+        .summary-card.analysis {
+            background: linear-gradient(135deg, #ab47bc 0%, #8e24aa 100%);
+            box-shadow: 0 5px 15px rgba(171, 71, 188, 0.3);
+        }
+
+        .summary-card h3 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            font-weight: 700;
+        }
+
+        .summary-card p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+
+        .section {
+            background: #f8fafc;
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 25px;
+            border-left: 5px solid #667eea;
+        }
+
+        .section h2 {
+            color: #2d3748;
+            margin-bottom: 20px;
+            font-size: 1.8em;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .articles-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 25px;
+        }
+
+        .media-section {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+        }
+
+        .media-section h3 {
+            color: #4a5568;
+            margin-bottom: 15px;
+            font-size: 1.3em;
+            text-align: center;
+            padding: 10px;
+            border-radius: 8px;
+        }
+
+        .western-media h3 {
+            background: linear-gradient(135deg, #3182ce 0%, #2c5282 100%);
+            color: white;
+        }
+
+        .arabic-media h3 {
+            background: linear-gradient(135deg, #38a169 0%, #2f855a 100%);
+            color: white;
+        }
+
+        .article-card {
+            background: #fff;
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 15px;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .article-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+        }
+
+        .article-title {
+            font-weight: 600;
+            color: #2d3748;
+            margin-bottom: 10px;
+            line-height: 1.4;
+        }
+
+        .article-source {
+            color: #667eea;
+            font-weight: 600;
+            font-size: 0.9em;
+            margin-bottom: 10px;
+        }
+
+        .article-summary {
+            color: #4a5568;
+            line-height: 1.6;
+            margin-bottom: 15px;
+        }
+
+        .article-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            color: #718096;
+            font-size: 0.9em;
+        }
+
+        .article-link {
+            background: #667eea;
+            color: white;
+            padding: 8px 15px;
+            border-radius: 20px;
+            text-decoration: none;
+            font-size: 0.9em;
+            transition: background 0.2s;
+        }
+
+        .article-link:hover {
+            background: #5a67d8;
+        }
+
+        .contradiction-item {
+            background: white;
+            border-left: 4px solid #ffa726;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+
+        .fact-check-item {
+            background: white;
+            border-left: 4px solid #4ecdc4;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+
+        .fact-check-topic {
+            font-weight: 600;
+            color: #2d3748;
+            margin-bottom: 10px;
+            font-size: 1.2em;
+        }
+
+        .terms-comparison {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        .terms-list {
+            padding: 15px;
+            border-radius: 8px;
+        }
+
+        .western-terms {
+            background: #e6f3ff;
+            border: 1px solid #3182ce;
+        }
+
+        .arabic-terms {
+            background: #e6fffa;
+            border: 1px solid #38a169;
+        }
+
+        .terms-list h4 {
+            margin-bottom: 10px;
+            font-weight: 600;
+        }
+
+        .term-tag {
+            display: inline-block;
+            background: #667eea;
+            color: white;
+            padding: 5px 12px;
+            border-radius: 15px;
+            margin: 3px;
+            font-size: 0.9em;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px;
+            color: #718096;
+        }
+
+        .empty-state h3 {
+            font-size: 1.5em;
+            margin-bottom: 10px;
+        }
+
+        @media (max-width: 768px) {
+            .articles-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .input-group {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            .input-group input {
+                min-width: auto;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔍 Gaza Media Fact-Check Dashboard</h1>
+            <p>Compare Western and Arabic media coverage to identify contradictions and bias</p>
+        </div>
+
+        <div class="control-panel">
+            <div class="input-group">
+                <label for="western-query">Western Query:</label>
+                <input type="text" id="western-query" placeholder="Gaza Israel" value="Gaza Israel">
+                
+                <label for="arabic-query">Arabic Query:</label>
+                <input type="text" id="arabic-query" placeholder="غزة إسرائيل" value="غزة إسرائيل">
+                
+                <button class="btn" onclick="runAnalysis()">🚀 Start Analysis</button>
+                <button class="btn" onclick="loadSampleData()">📊 Load Sample Data</button>
+            </div>
+        </div>
+
+        <div class="loading" id="loading">
+            <div class="spinner"></div>
+            <div>Analyzing media coverage... This may take a few moments</div>
+        </div>
+
+        <div class="results" id="results" style="display: none;">
+            <!-- Results will be populated here -->
+        </div>
+    </div>
+
+    <script>
+        // Sample data for demonstration
+        const sampleData = {
+            "western_articles": [
+                {
+                    "title": "Israeli strike kills nine of Gaza doctor's children, hospital says",
+                    "url": "https://www.bbc.com/news/articles/c0eq9lq7xr1o",
+                    "source": "BBC",
+                    "summary": "A British surgeon working in Nasser Hospital said he had operated on the doctor's surviving 11-year-old.",
+                    "published": "2025-05-24T15:28:41",
+                    "category": "western_media"
+                },
+                {
+                    "title": "Israeli soldiers accused of widespread use of human shields in Gaza",
+                    "url": "https://www.theguardian.com/world/2025/may/24/israel-investigates-use-of-palestinians-as-human-shields-by-its-forces-in-gaza",
+                    "source": "Guardian",
+                    "summary": "Israel is investigating several cases involving soldiers who have forced Palestinians to act as human shields in Gaza.",
+                    "published": "2025-05-24T14:55:48",
+                    "category": "western_media"
+                }
+            ],
+            "arabic_articles": [
+                {
+                    "title": "طبيبة فلسطينية تُفجع بوصول جثامين تسعة من أبنائها أثناء عملها في مجمع ناصر الطبي",
+                    "url": "https://www.bbc.com/arabic/articles/ce9v3drn1vko",
+                    "source": "BBC Arabic",
+                    "summary": "طبيبة الأطفال الفلسطينية آلاء النجار تُفجع بوصول جثامين تسعة من أطفالها متفحمين إلى مجمع ناصر الطبي",
+                    "published": "2025-05-24T13:46:39",
+                    "category": "arabic_media"
+                },
+                {
+                    "title": "الأونروا: مئات الآلاف في غزة يتضورون جوعا",
+                    "url": "https://www.skynewsarabia.com/middle-east/1798565",
+                    "source": "Sky News Arabic",
+                    "summary": "كشف المتحدث باسم وكالة غوث وتشغيل اللاجئين الفلسطينيين أن مئات الآلاف في قطاع غزة يتضورون جوعا",
+                    "published": "2025-05-24T10:01:15",
+                    "category": "arabic_media"
+                }
+            ],
+            "fact_checks": [
+                {
+                    "topic": "Framing and Terminology",
+                    "western_terms": ["human shields"],
+                    "arabic_terms": ["martyrs", "resistance"],
+                    "analysis": "Different terminology reveals different perspectives on the same events"
+                }
+            ],
+            "summary": {
+                "western_sources_analyzed": 5,
+                "arabic_sources_analyzed": 5,
+                "contradictions_found": 3,
+                "fact_checks_performed": 1
+            }
+        };
+
+        function loadSampleData() {
+            displayResults(sampleData);
+        }
+
+        function runAnalysis() {
+            const westernQuery = document.getElementById('western-query').value;
+            const arabicQuery = document.getElementById('arabic-query').value;
+            
+            // Show loading
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('results').style.display = 'none';
+            
+            // Make API call to Flask server
+            fetch('/api/analyze', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    western_query: westernQuery,
+                    arabic_query: arabicQuery,
+                    hours_back: 24
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('loading').style.display = 'none';
+                
+                if (data.status === 'success') {
+                    displayResults(data);
+                } else {
+                    displayError(data.message || 'Analysis failed');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                document.getElementById('loading').style.display = 'none';
+                displayError('Network error: ' + error.message);
+            });
+        }
+
+        function displayError(message) {
+            const resultsDiv = document.getElementById('results');
+            resultsDiv.style.display = 'block';
+            resultsDiv.innerHTML = `
+                <div class="section">
+                    <h2>❌ Analysis Error</h2>
+                    <div class="fact-check-item">
+                        <div class="fact-check-topic">Error Message:</div>
+                        <p>${message}</p>
+                        <p>Please try again or check the server logs for more details.</p>
+                    </div>
+                </div>
+            `;
+        }
+
+        function displayResults(data) {
+            const resultsDiv = document.getElementById('results');
+            resultsDiv.style.display = 'block';
+            
+            resultsDiv.innerHTML = `
+                <div class="summary-cards">
+                    <div class="summary-card sources">
+                        <h3>${data.summary.western_sources_analyzed + data.summary.arabic_sources_analyzed}</h3>
+                        <p>Total Sources Analyzed</p>
+                    </div>
+                    <div class="summary-card">
+                        <h3>${data.summary.matched_pairs_found || 0}</h3>
+                        <p>Matched Article Pairs</p>
+                    </div>
+                    <div class="summary-card contradictions">
+                        <h3>${data.summary.contradictions_found}</h3>
+                        <p>Contradictions Found</p>
+                    </div>
+                    <div class="summary-card analysis">
+                        <h3>${data.summary.fact_checks_performed}</h3>
+                        <p>Fact-Checks Performed</p>
+                    </div>
+                </div>
+
+                ${data.matches && data.matches.length > 0 ? `
+                <div class="section">
+                    <h2>🔗 Matched Article Pairs</h2>
+                    <p>Articles covering the same events from Western and Arabic perspectives:</p>
+                    ${generateMatchedPairs(data.matches)}
+                </div>
+                ` : ''}
+
+                <div class="section">
+                    <h2>📰 Media Coverage Comparison</h2>
+                    <div class="articles-grid">
+                        <div class="media-section western-media">
+                            <h3>🇺🇸 Western Media</h3>
+                            ${generateArticleCards(data.western_articles)}
+                        </div>
+                        <div class="media-section arabic-media">
+                            <h3>🇵🇸 Arabic Media</h3>
+                            ${generateArticleCards(data.arabic_articles)}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="section">
+                    <h2>⚖️ Fact-Check Analysis</h2>
+                    ${generateFactChecks(data.fact_checks)}
+                </div>
+
+                ${data.contradictions && data.contradictions.length > 0 ? `
+                <div class="section">
+                    <h2>🚨 Potential Contradictions</h2>
+                    ${generateContradictions(data.contradictions)}
+                </div>
+                ` : ''}
+            `;
+        }
+
+        function generateArticleCards(articles) {
+            if (!articles || articles.length === 0) {
+                return '<div class="empty-state"><h3>No articles found</h3><p>Try adjusting your search terms</p></div>';
+            }
+
+            return articles.map(article => `
+                <div class="article-card">
+                    <div class="article-title">${article.title}</div>
+                    <div class="article-source">${article.source}</div>
+                    <div class="article-summary">${article.summary}</div>
+                    <div class="article-meta">
+                        <span>${new Date(article.published).toLocaleDateString()}</span>
+                        <a href="${article.url}" target="_blank" class="article-link">Read Full Article</a>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function generateMatchedPairs(matches) {
+            if (!matches || matches.length === 0) {
+                return '<div class="empty-state"><h3>No matched pairs found</h3><p>No articles covering the same events were detected</p></div>';
+            }
+
+            return matches.map((match, index) => `
+                <div class="contradiction-item">
+                    <div class="fact-check-topic">Match ${index + 1} (Score: ${match.match_score}) - ${match.common_keywords.join(', ')}</div>
+                    <div class="terms-comparison">
+                        <div class="terms-list western-terms">
+                            <h4>🇺🇸 ${match.western_article.source}:</h4>
+                            <strong>${match.western_article.title}</strong>
+                            <p>${match.western_article.summary.substring(0, 200)}...</p>
+                            <a href="${match.western_article.url}" target="_blank" class="article-link">Read Full Article</a>
+                            ${match.western_numbers && match.western_numbers.length > 0 ? 
+                                `<div style="margin-top: 10px;"><strong>Casualty Numbers:</strong> ${match.western_numbers.join(', ')}</div>` : ''}
+                        </div>
+                        <div class="terms-list arabic-terms">
+                            <h4>🇵🇸 ${match.arabic_article.source}:</h4>
+                            <strong>${match.arabic_article.title}</strong>
+                            <p>${match.arabic_article.summary.substring(0, 200)}...</p>
+                            <a href="${match.arabic_article.url}" target="_blank" class="article-link">Read Full Article</a>
+                            ${match.arabic_numbers && match.arabic_numbers.length > 0 ? 
+                                `<div style="margin-top: 10px;"><strong>Casualty Numbers:</strong> ${match.arabic_numbers.join(', ')}</div>` : ''}
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function generateContradictions(contradictions) {
+            if (!contradictions || contradictions.length === 0) {
+                return '<div class="empty-state"><h3>No contradictions detected</h3><p>The coverage appears consistent</p></div>';
+            }
+
+            return contradictions.map(contradiction => `
+                <div class="contradiction-item">
+                    <div class="fact-check-topic">Potential Contradiction</div>
+                    <div class="terms-comparison">
+                        <div class="terms-list western-terms">
+                            <h4>🇺🇸 ${contradiction.western_article.source}:</h4>
+                            <strong>${contradiction.western_article.title}</strong>
+                            <p>${contradiction.western_article.summary}</p>
+                        </div>
+                        <div class="terms-list arabic-terms">
+                            <h4>🇵🇸 ${contradiction.arabic_article.source}:</h4>
+                            <strong>${contradiction.arabic_article.title}</strong>
+                            <p>${contradiction.arabic_article.summary}</p>
+                        </div>
+                    </div>
+                    <p><strong>Analysis:</strong> ${contradiction.potential_contradiction}</p>
+                </div>
+            `).join('');
+        }
+
+        function generateFactChecks(factChecks) {
+            if (!factChecks || factChecks.length === 0) {
+                return '<div class="empty-state"><h3>No fact-checks available</h3><p>Analysis will appear here</p></div>';
+            }
+
+            return factChecks.map(check => `
+                <div class="fact-check-item">
+                    <div class="fact-check-topic">${check.topic}</div>
+                    <p>${check.analysis}</p>
+                    <div class="terms-comparison">
+                        <div class="terms-list western-terms">
+                            <h4>🇺🇸 Western Terms:</h4>
+                            ${(check.western_terms || []).map(term => `<span class="term-tag">${term}</span>`).join('')}
+                            ${(check.western_numbers || []).length > 0 ? `<div><strong>Numbers:</strong> ${check.western_numbers.join(', ')}</div>` : ''}
+                        </div>
+                        <div class="terms-list arabic-terms">
+                            <h4>🇵🇸 Arabic Terms:</h4>
+                            ${(check.arabic_terms || []).map(term => `<span class="term-tag">${term}</span>`).join('')}
+                            ${(check.arabic_numbers || []).length > 0 ? `<div><strong>Numbers:</strong> ${check.arabic_numbers.join(', ')}</div>` : ''}
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Load sample data on page load
+        window.onload = function() {
+            loadSampleData();
+        };
+    </script>
+</body>
+</html>
